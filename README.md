@@ -6,7 +6,7 @@ Um sistema desktop completo para gerenciamento de acervo, desenvolvido para demo
 
 ## 📸 Demonstração do Sistema
 
-![Video](apresentacao.mp4)
+![Demonstração](apresentacao.gif)
 *Interface desenvolvida com JavaFX, apresentando cadastro e listagem em tempo real.*
 
 ---
