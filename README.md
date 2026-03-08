@@ -6,7 +6,7 @@ Um sistema desktop completo para gerenciamento de acervo, desenvolvido para demo
 
 ## 📸 Demonstração do Sistema
 
-![Captura de Tela da Interface](screenshot.png)
+![Video](apresentacao.mp4)
 *Interface desenvolvida com JavaFX, apresentando cadastro e listagem em tempo real.*
 
 ---
@@ -17,6 +17,7 @@ Um sistema desktop completo para gerenciamento de acervo, desenvolvido para demo
 * **Gestão de Acervo:** Cadastro completo (Título, Autor, Ano) e remoção de livros.
 * **Persistência de Dados:** Salvamento automático em arquivo `.txt`, garantindo que os dados não sejam perdidos ao fechar o programa.
 * **Validação de Dados:** Filtros que impedem o cadastro de campos vazios ou anos inválidos.
+* **Busca Inteligente:** Filtro em tempo real por Título ou Autor utilizando FilteredList.
 
 ---
 

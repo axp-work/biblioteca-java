@@ -1,6 +1,7 @@
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList; // Nova importação
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -14,99 +15,105 @@ public class InterfaceGrafica extends Application {
 
     private Biblioteca minhaBiblioteca = new Biblioteca();
     private TableView<Livro> tabela = new TableView<>();
-    private ObservableList<Livro> listaObservavel;
+    private ObservableList<Livro> listaMaster;
 
     @Override
     public void start(Stage palco) {
-        // 1. Carregar dados existentes
         minhaBiblioteca.carregarArquivo();
-        listaObservavel = FXCollections.observableArrayList(minhaBiblioteca.getAcervo());
+        listaMaster = FXCollections.observableArrayList(minhaBiblioteca.getAcervo());
 
-        // 2. Configurar colunas da tabela
+        // --- CONFIGURAÇÃO DO FILTRO (A MÁGICA DA BUSCA) ---
+        FilteredList<Livro> listaFiltrada = new FilteredList<>(listaMaster, p -> true);
+
+        // Campo de busca
+        TextField campoBusca = new TextField();
+        campoBusca.setPromptText("🔍 Digite para buscar por título ou autor...");
+        
+        // Evento que escuta cada tecla digitada
+        campoBusca.textProperty().addListener((observable, oldValue, newValue) -> {
+            listaFiltrada.setPredicate(livro -> {
+                // Se o campo estiver vazio, mostra todos
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+
+                String filtroMinusculo = newValue.toLowerCase();
+
+                if (livro.getTitulo().toLowerCase().contains(filtroMinusculo)) {
+                    return true; // Encontrou no título
+                } else if (livro.getAutor().toLowerCase().contains(filtroMinusculo)) {
+                    return true; // Encontrou no autor
+                }
+                return false; // Não encontrou nada
+            });
+        });
+
+        // --- TABELA ---
         TableColumn<Livro, String> colTitulo = new TableColumn<>("Título");
         colTitulo.setCellValueFactory(new PropertyValueFactory<>("titulo"));
-
         TableColumn<Livro, String> colAutor = new TableColumn<>("Autor");
         colAutor.setCellValueFactory(new PropertyValueFactory<>("autor"));
-
         TableColumn<Livro, Integer> colAno = new TableColumn<>("Ano");
         colAno.setCellValueFactory(new PropertyValueFactory<>("anoPublicacao"));
 
-        tabela.getColumns().clear(); // Limpa colunas duplicadas se houver
-        tabela.getColumns().addAll(colTitulo, colAutor, colAno);
-        tabela.setItems(listaObservavel);
+        tabela.getColumns().setAll(colTitulo, colAutor, colAno);
+        tabela.setItems(listaFiltrada); // Agora a tabela usa a lista FILTRADA
 
-        // 3. Criar campos de entrada
+        // --- CAMPOS DE CADASTRO ---
         TextField campoTitulo = new TextField();
         campoTitulo.setPromptText("Título");
-        
         TextField campoAutor = new TextField();
         campoAutor.setPromptText("Autor");
-        
         TextField campoAno = new TextField();
-        campoAno.setPromptText("Ano (Ex: 2024)");
+        campoAno.setPromptText("Ano");
 
-        // 4. Criar botões
         Button btnCadastrar = new Button("Cadastrar Livro");
-        btnCadastrar.setMaxWidth(Double.MAX_VALUE); // Botão ocupa largura toda
-
-        Button btnRemover = new Button("Remover Selecionado");
-        btnRemover.setMaxWidth(Double.MAX_VALUE);
-        btnRemover.setStyle("-fx-base: #ff6666;"); // Cor avermelhada para alerta
-
-        // --- AÇÃO DE CADASTRAR ---
+        btnCadastrar.setMaxWidth(Double.MAX_VALUE);
         btnCadastrar.setOnAction(e -> {
-            String t = campoTitulo.getText().trim();
-            String a = campoAutor.getText().trim();
-            String anoTxt = campoAno.getText().trim();
-
-            if (t.isEmpty() || a.isEmpty() || anoTxt.isEmpty()) {
-                new Alert(Alert.AlertType.WARNING, "Preencha todos os campos!").show();
-                return;
-            }
-
             try {
-                int ano = Integer.parseInt(anoTxt);
-                if (ano < 1450 || ano > 2026) {
-                    new Alert(Alert.AlertType.WARNING, "Ano inválido!").show();
-                    return;
+                String t = campoTitulo.getText().trim();
+                String a = campoAutor.getText().trim();
+                int ano = Integer.parseInt(campoAno.getText().trim());
+
+                if (!t.isEmpty() && !a.isEmpty()) {
+                    Livro novo = new Livro(t, a, ano);
+                    minhaBiblioteca.adicionar(novo);
+                    minhaBiblioteca.salvarArquivo();
+                    listaMaster.add(novo); // Adiciona na lista principal
+
+                    campoTitulo.clear();
+                    campoAutor.clear();
+                    campoAno.clear();
                 }
-
-                Livro novo = new Livro(t, a, ano);
-                minhaBiblioteca.adicionar(novo);
-                minhaBiblioteca.salvarArquivo();
-                listaObservavel.add(novo);
-
-                campoTitulo.clear();
-                campoAutor.clear();
-                campoAno.clear();
-            } catch (NumberFormatException ex) {
-                new Alert(Alert.AlertType.ERROR, "Ano deve ser um número!").show();
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Erro ao cadastrar!").show();
             }
         });
 
-        // --- AÇÃO DE REMOVER ---
+        Button btnRemover = new Button("Remover Selecionado");
+        btnRemover.setMaxWidth(Double.MAX_VALUE);
+        btnRemover.setStyle("-fx-base: #ff6666;");
         btnRemover.setOnAction(e -> {
             Livro selecionado = tabela.getSelectionModel().getSelectedItem();
             if (selecionado != null) {
                 minhaBiblioteca.remover(selecionado);
-                listaObservavel.remove(selecionado);
-            } else {
-                new Alert(Alert.AlertType.WARNING, "Selecione um livro na tabela para remover!").show();
+                listaMaster.remove(selecionado);
             }
         });
 
-        // 5. Organizar Layout
+        // --- LAYOUT ---
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
         layout.getChildren().addAll(
-            new Label("Novo Livro:"), campoTitulo, campoAutor, campoAno, 
-            btnCadastrar, btnRemover, 
-            new Separator(), new Label("Acervo Atual:"), tabela
+            new Label("Busca:"), campoBusca, 
+            new Separator(),
+            new Label("Novo Livro:"), campoTitulo, campoAutor, campoAno, btnCadastrar,
+            new Separator(),
+            btnRemover, tabela
         );
 
-        Scene cena = new Scene(layout, 500, 600);
-        palco.setTitle("Gerenciador de Biblioteca");
+        Scene cena = new Scene(layout, 550, 650);
+        palco.setTitle("Biblioteca Inteligente");
         palco.setScene(cena);
         palco.show();
     }
