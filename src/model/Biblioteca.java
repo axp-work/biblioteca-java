@@ -41,6 +41,11 @@ public class Biblioteca {
         }
     }
 	
+	public void remover(Livro livro) {
+    acervo.remove(livro); // Remove da lista na memória
+    salvarArquivo();      // Sobrescreve o arquivo .txt já sem esse livro
+}
+	
 	public void carregarArquivo() {
     File arquivo = new File("livros.txt");
     
@@ -67,6 +72,10 @@ public class Biblioteca {
     } catch (IOException e) {
         System.out.println("Erro ao carregar dados: " + e.getMessage());
     }
+}
+// Este método permite que a Interface pegue a lista de livros para mostrar na tabela
+public List<Livro> getAcervo() {
+    return acervo;
 }
 
 }   

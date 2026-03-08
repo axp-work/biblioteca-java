@@ -11,6 +11,11 @@ public class Livro {
         this.autor = autor;
         this.anoPublicacao = anoPublicacao;
     }
+	
+	// Métodos GET (Obrigatórios para a Tabela do JavaFX funcionar)
+    public String getTitulo() { return titulo; }
+    public String getAutor() { return autor; }
+    public int getAnoPublicacao() { return anoPublicacao; }
 
     // Método para exibir os dados no CMD
     public void exibirDados() {
